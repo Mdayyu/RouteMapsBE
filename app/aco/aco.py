@@ -14,7 +14,8 @@ def run_aco(data: dict):
     start = "LLDIKTI"
     chosen = data.get("campuses", [])
     vehicle = data.get("vehicle", "car")
-    return_to_start = data.get("return_to_start", False)
+    return_to_start = data.get("returnToStart", False)
+
 
     # Kalau ingin kembali ke titik awal
     if return_to_start and chosen:
