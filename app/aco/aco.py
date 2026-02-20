@@ -52,11 +52,11 @@ def run_aco(data: dict):
 
                 lights = count_lights_on_route(route, traffic_lights)
                 traffic_delay = lights * TRAFFIC_LIGHT_DELAY
-                total_time = dur + traffic_delay  # waktu total = durasi + delay lampu
+                total_time = dur + traffic_delay  # waktu total = durasi + delay lampu 
 
                 cost = (
                     (DISTANCE_WEIGHT * dist)
-                    + (TRAFFIC_WEIGHT * total_time)
+                    + (TRAFFIC_WEIGHT * (dur + traffic_delay))
                 )
 
 
@@ -154,7 +154,7 @@ def run_aco(data: dict):
 
         cost = (
             (DISTANCE_WEIGHT * dist)
-            + (TRAFFIC_WEIGHT * traffic_delay)
+            + (TRAFFIC_WEIGHT * (dur + traffic_delay))
         )
 
         segments.append({
