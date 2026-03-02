@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.aco.aco import run_aco
-from app.data.locations import LOCATIONS
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.aco.aco import run_aco, LOCATIONS
 
 app = FastAPI(title="ACO Route API")
 

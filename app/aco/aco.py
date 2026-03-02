@@ -1,6 +1,8 @@
 import numpy as np
 import random
-from app.data.locations import LOCATIONS
+import pandas as pd
+import os
+
 from app.services.osrm_service import get_osrm_route
 from app.services.traffic_service import (
     get_traffic_lights,
@@ -11,11 +13,25 @@ from app.config import (
     TRAFFIC_WEIGHT,
     TRAFFIC_LIGHT_DELAY,
 )
+# load dataset
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+file_path = os.path.join(BASE_DIR, "data", "Locations_Yogyakarta.xlsx")
+
+df = pd.read_excel(file_path)
+
+# Ubah koma jadi titik lalu convert ke float
+df["Latitude"] = df["Latitude"].astype(str).str.replace(",", ".").astype(float)
+df["Longitude"] = df["Longitude"].astype(str).str.replace(",", ".").astype(float)
+
+LOCATIONS = {
+    row["Name"]: (row["Latitude"], row["Longitude"])
+    for _, row in df.iterrows()
+}
 
 def run_aco(data: dict):
     start = "LLDIKTI"
     chosen = data.get("campuses", [])
-    vehicle = data.get("vehicle", "car")
+    vehicle = data.get("vehicle", "mobil")
     return_to_start = data.get("returnToStart", False)
 
     if not chosen:
@@ -28,7 +44,7 @@ def run_aco(data: dict):
     BETA = 2
     EVAPORATION = 0.5
     Q = 100
-    NUM_ANTS = 5
+    NUM_ANTS = 10
     NUM_ITERATIONS = 10
 
     nodes = [start] + chosen
@@ -54,6 +70,7 @@ def run_aco(data: dict):
                 traffic_delay = lights * TRAFFIC_LIGHT_DELAY
                 total_time = dur + traffic_delay  # waktu total = durasi + delay lampu 
 
+                #perhitungan cost
                 cost = (
                     (DISTANCE_WEIGHT * dist)
                     + (TRAFFIC_WEIGHT * (dur + traffic_delay))
@@ -64,10 +81,11 @@ def run_aco(data: dict):
             else:
                 cost_matrix[i][j] = np.inf
 
+    #perhitungan visibilitas
     visibility = 1 / cost_matrix
 
     # ==============================
-    # 4.1.3 INIT PHEROMONE
+    #  INIT PHEROMONE
     # ==============================
     pheromone = np.ones((n, n))
 
@@ -78,6 +96,8 @@ def run_aco(data: dict):
     # ITERATION ACO
     # ==============================
     for _ in range(NUM_ITERATIONS):
+
+        delta_pheromone = np.zeros((n, n))
 
         for _ in range(NUM_ANTS):
 
@@ -113,25 +133,21 @@ def run_aco(data: dict):
 
             total = 0
             for i in range(len(visited) - 1):
+                # menghitung total cost rute
                 total += cost_matrix[visited[i]][visited[i + 1]]
 
             if total < best_cost:
                 best_cost = total
                 best_route = visited
 
-            # ==============================
-            # UPDATE PHEROMONE (LOCAL)
-            # ==============================
+            # Simpan kontribusi pheromone ke delta 
             for i in range(len(visited) - 1):
-                pheromone[visited[i]][visited[i + 1]] += Q / total
+                # update feromon
+                delta_pheromone[visited[i]][visited[i + 1]] += Q / total
 
-        # EVAPORATION
-        pheromone = (1 - EVAPORATION) * pheromone
-
-    # ==============================
-    # Setelah ACO selesai,
-    # pakai route terbaik untuk hitung detail segment
-    # ==============================
+    # UPDATE GLOBAL 
+    pheromone = (1 - EVAPORATION) * pheromone + delta_pheromone
+  
 
     ordered_nodes = [nodes[i] for i in best_route]
 
