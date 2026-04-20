@@ -1,25 +1,27 @@
 import numpy as np
 import random
-import pandas as pd
 import os
+import pandas as pd
+
+results = []
 
 from app.services.osrm_service import get_osrm_route
 from app.services.traffic_service import (
     get_traffic_lights,
     count_lights_on_route,
 )
-from app.config import (
-    DISTANCE_WEIGHT,
-    TRAFFIC_WEIGHT,
-    TRAFFIC_LIGHT_DELAY,
-)
-# load dataset
+
+
+np.set_printoptions(precision=3, suppress=True)
+
+# ==============================
+# LOAD DATASET
+# ==============================
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 file_path = os.path.join(BASE_DIR, "data", "Locations_Yogyakarta.xlsx")
 
 df = pd.read_excel(file_path)
-
-# Ubah koma jadi titik lalu convert ke float
 df["Latitude"] = df["Latitude"].astype(str).str.replace(",", ".").astype(float)
 df["Longitude"] = df["Longitude"].astype(str).str.replace(",", ".").astype(float)
 
@@ -29,6 +31,9 @@ LOCATIONS = {
 }
 
 def run_aco(data: dict):
+    print("🔥 DATA MASUK BACKEND:", data)
+  
+
     start = "LLDIKTI"
     chosen = data.get("campuses", [])
     vehicle = data.get("vehicle", "mobil")
@@ -40,22 +45,27 @@ def run_aco(data: dict):
     # ==============================
     # PARAMETER ACO
     # ==============================
-    ALPHA = 1
-    BETA = 2
-    EVAPORATION = 0.5
-    Q = 100
-    NUM_ANTS = 10
-    NUM_ITERATIONS = 10
+    ALPHA = data.get('ALPHA', 4)  
+    BETA = data.get('BETA', 1)    
+    EVAPORATION = data.get('EVAPORATION', 0.1)  
+    QA = data.get('QA', 100) 
+    NUM_ANTS = data.get('NUM_ANTS', 50)  
+    NUM_ITERATIONS = data.get('NUM_ITERATIONS', 100) 
+    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.7)  
+    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.3)    
+    TRAFFIC_LIGHT_DELAY = data.get('TRAFFIC_LIGHT_DELAY', 2)  
 
     nodes = [start] + chosen
     n = len(nodes)
 
-    traffic_lights = get_traffic_lights(LOCATIONS[start], radius=2000)
+    traffic_lights = get_traffic_lights(LOCATIONS[start], radius=1500)
 
     # ==============================
-    # 4.1.2 COST MATRIX + VISIBILITY
+    # DISTANCE & TIME MATRIX
     # ==============================
-    cost_matrix = np.zeros((n, n))
+
+    distance_matrix = np.zeros((n, n))
+    time_matrix = np.zeros((n, n))
 
     for i in range(n):
         for j in range(n):
@@ -68,62 +78,86 @@ def run_aco(data: dict):
 
                 lights = count_lights_on_route(route, traffic_lights)
                 traffic_delay = lights * TRAFFIC_LIGHT_DELAY
-                total_time = dur + traffic_delay  # waktu total = durasi + delay lampu 
+                total_time = dur + traffic_delay
 
-                #perhitungan cost
-                cost = (
-                    (DISTANCE_WEIGHT * dist)
-                    + (TRAFFIC_WEIGHT * (dur + traffic_delay))
-                )
-
-
-                cost_matrix[i][j] = cost
+                distance_matrix[i][j] = dist
+                time_matrix[i][j] = total_time
             else:
-                cost_matrix[i][j] = np.inf
-
-    #perhitungan visibilitas
-    visibility = 1 / cost_matrix
+                distance_matrix[i][j] = np.inf
+                time_matrix[i][j] = np.inf
 
     # ==============================
-    #  INIT PHEROMONE
+    # NORMALISASI
     # ==============================
+
+    dist_min = np.min(distance_matrix[np.isfinite(distance_matrix)])
+    dist_max = np.max(distance_matrix[np.isfinite(distance_matrix)])
+
+    time_min = np.min(time_matrix[np.isfinite(time_matrix)])
+    time_max = np.max(time_matrix[np.isfinite(time_matrix)])
+
+    distance_norm = (distance_matrix - dist_min) / (dist_max - dist_min + 1e-10)
+    time_norm = (time_matrix - time_min) / (time_max - time_min + 1e-10)
+
+    # ==============================
+    # COST & VISIBILITY
+    # ==============================
+
+    cost_matrix = (
+        DISTANCE_WEIGHT * distance_norm +
+        TRAFFIC_WEIGHT * time_norm
+    )
+
+    np.fill_diagonal(cost_matrix, np.inf)
+
+    visibility = 1 / (cost_matrix + 1e-10)
+
+    # ==============================
+    # PHEROMONE
+    # ==============================
+
     pheromone = np.ones((n, n))
 
     best_route = None
     best_cost = float("inf")
 
     # ==============================
-    # ITERATION ACO
+    # ACO ITERATION
     # ==============================
-    for _ in range(NUM_ITERATIONS):
+
+    for iteration in range(NUM_ITERATIONS):
+
+        print(f"\n===== ITERATION {iteration+1} =====")
 
         delta_pheromone = np.zeros((n, n))
+        all_routes = []
+        all_costs = []
 
-        for _ in range(NUM_ANTS):
+        for ant in range(NUM_ANTS):
 
             visited = [0]
             current = 0
 
             while len(visited) < n:
 
-                probabilities = []
+                probabilities = np.zeros(n)
 
                 for j in range(n):
                     if j not in visited:
                         tau = pheromone[current][j] ** ALPHA
                         eta = visibility[current][j] ** BETA
-                        probabilities.append(tau * eta)
-                    else:
-                        probabilities.append(0)
+                        probabilities[j] = tau * eta
 
-                probabilities = np.array(probabilities)
-                probabilities_sum = probabilities.sum()
-
-                if probabilities_sum == 0:
+                if probabilities.sum() == 0:
                     break
 
-                probabilities = probabilities / probabilities_sum
-                next_node = np.random.choice(range(n), p=probabilities)
+                probabilities = probabilities / probabilities.sum()
+
+                # langkah pertama random
+                if len(visited) == 1:
+                    next_node = np.random.choice(range(n), p=probabilities)
+                else:
+                    next_node = np.argmax(probabilities)
 
                 visited.append(next_node)
                 current = next_node
@@ -131,27 +165,65 @@ def run_aco(data: dict):
             if return_to_start:
                 visited.append(0)
 
-            total = 0
-            for i in range(len(visited) - 1):
-                # menghitung total cost rute
-                total += cost_matrix[visited[i]][visited[i + 1]]
+            route_names = [nodes[i] for i in visited]
 
-            if total < best_cost:
-                best_cost = total
+            total_cost_route = sum(
+                cost_matrix[visited[i]][visited[i+1]]
+                for i in range(len(visited)-1)
+            )
+
+            all_routes.append(route_names)
+            all_costs.append(total_cost_route)
+
+            # update best
+            if total_cost_route < best_cost:
+                best_cost = total_cost_route
                 best_route = visited
 
-            # Simpan kontribusi pheromone ke delta 
+            # update pheromone delta
             for i in range(len(visited) - 1):
-                # update feromon
-                delta_pheromone[visited[i]][visited[i + 1]] += Q / total
+                from_node = visited[i]
+                to_node = visited[i + 1]
+                delta = QA / (total_cost_route + 1e-10)
+                delta_pheromone[from_node][to_node] += delta
 
-    # UPDATE GLOBAL 
-    pheromone = (1 - EVAPORATION) * pheromone + delta_pheromone
-  
+        # ==============================
+        # RINGKASAN ITERASI
+        # ==============================
+
+        print("Rute tiap semut:")
+        for i, r in enumerate(all_routes):
+            print(f"  Ant {i+1}: {r} | Cost: {round(all_costs[i], 4)}")
+
+        unique_routes = set(tuple(r) for r in all_routes)
+
+        if len(unique_routes) == 1:
+            print(">> KONVERGEN (semua semut sama)")
+        else:
+            print(f">> Variasi rute: {len(unique_routes)}")
+
+        print(f">> Best cost sementara: {round(best_cost, 4)}")
+        print(f">> Best route sementara: {[nodes[i] for i in best_route]}")
+
+        # update pheromone
+        pheromone = (1 - EVAPORATION) * pheromone + delta_pheromone
+
+    # ==============================
+    # FINAL RESULT
+    # ==============================
+
+    print("\n===== HASIL AKHIR =====")
+    print("Best Route:", [nodes[i] for i in best_route])
+    print("Best Cost:", best_cost)
+
+    # ==============================
+    # DETAIL SEGMENTS
+    # ==============================
 
     ordered_nodes = [nodes[i] for i in best_route]
 
     current = ordered_nodes[0]
+
     segments = []
     total_cost = 0
     total_distance = 0
@@ -169,15 +241,15 @@ def run_aco(data: dict):
         traffic_delay = lights * TRAFFIC_LIGHT_DELAY
 
         cost = (
-            (DISTANCE_WEIGHT * dist)
-            + (TRAFFIC_WEIGHT * (dur + traffic_delay))
+            DISTANCE_WEIGHT * dist +
+            TRAFFIC_WEIGHT * (dur + traffic_delay)
         )
 
         segments.append({
             "from": current,
             "to": campus,
             "distance_km": round(dist, 2),
-            "duration_min": round(dur, 2),
+            "duration_min": round(dur + traffic_delay, 2),
             "traffic_lights": lights,
             "traffic_delay_min": round(traffic_delay, 1),
             "cost": round(cost, 2),
@@ -187,6 +259,7 @@ def run_aco(data: dict):
         total_cost += cost
         total_distance += dist
         total_duration += (dur + traffic_delay)
+
         current = campus
 
     return {
@@ -195,4 +268,3 @@ def run_aco(data: dict):
         "total_cost": round(total_cost, 2),
         "segments": segments,
     }
-
