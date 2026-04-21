@@ -4,12 +4,17 @@ from app.aco.aco import run_aco, LOCATIONS
 app = FastAPI(title="ACO Route API")
 from mangum import Mangum 
 
+origins = [
+    "http://localhost:5173",            
+]
+
 # CORS Middleware Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Izinkan semua origin
-    allow_methods=["*"],  # Izinkan semua metode
-    allow_headers=["*"],  # Izinkan semua header
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # API Route untuk mendapatkan rute berdasarkan data input
