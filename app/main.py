@@ -31,8 +31,8 @@ def get_parameter():
     return {
         "ALPHA": 4,
         "BETA": 1,
-        "EVAPORATION": 0.1,
+        "EVAPORATION": 0.5,
         "QA": 100,
         "NUM_ANTS": 10,
-        "NUM_ITERATIONS": 10
+        "NUM_ITERATIONS": 100
     }
