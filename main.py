@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.aco.aco import run_aco, LOCATIONS
 app = FastAPI(title="ACO Route API")
+from mangum import Mangum 
 
 # CORS Middleware Configuration
 app.add_middleware(
