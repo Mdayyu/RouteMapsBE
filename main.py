@@ -37,10 +37,10 @@ def get_campuses():
 @app.get("/aco")
 def get_parameter():
     return {
-        "ALPHA": 3,
-        "BETA": 4,
+        "ALPHA": 1,
+        "BETA": 3,
         "EVAPORATION": 0.5,
         "QA": 100,
-        "NUM_ANTS": 10,
+        "NUM_ANTS": 100,
         "NUM_ITERATIONS": 100
     }

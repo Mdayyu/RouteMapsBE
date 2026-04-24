@@ -45,14 +45,14 @@ def run_aco(data: dict):
     # ==============================
     # PARAMETER ACO
     # ==============================
-    ALPHA = data.get('ALPHA', 4)  
-    BETA = data.get('BETA', 1)    
-    EVAPORATION = data.get('EVAPORATION', 0.1)  
+    ALPHA = data.get('ALPHA', 1)  
+    BETA = data.get('BETA', 3)    
+    EVAPORATION = data.get('EVAPORATION', 0.5)  
     QA = data.get('QA', 100) 
-    NUM_ANTS = data.get('NUM_ANTS', 50)  
+    NUM_ANTS = data.get('NUM_ANTS', 100)  
     NUM_ITERATIONS = data.get('NUM_ITERATIONS', 100) 
-    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.5)  
-    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.5)    
+    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.6)  
+    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.4)    
     TRAFFIC_LIGHT_DELAY = data.get('TRAFFIC_LIGHT_DELAY', 2)  
 
     nodes = [start] + chosen
