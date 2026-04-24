@@ -5,7 +5,9 @@ app = FastAPI(title="ACO Route API")
 from mangum import Mangum 
 
 origins = [
-    "http://localhost:5173",            
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+                
 ]
 
 # CORS Middleware Configuration
