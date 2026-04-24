@@ -51,8 +51,8 @@ def run_aco(data: dict):
     QA = data.get('QA', 100) 
     NUM_ANTS = data.get('NUM_ANTS', 50)  
     NUM_ITERATIONS = data.get('NUM_ITERATIONS', 100) 
-    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.1)  
-    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.9)    
+    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.4)  
+    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.6)    
     TRAFFIC_LIGHT_DELAY = data.get('TRAFFIC_LIGHT_DELAY', 2)  
 
     nodes = [start] + chosen
