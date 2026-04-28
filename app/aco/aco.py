@@ -195,8 +195,8 @@ def run_aco(data: dict):
         total_duration += (dur + traffic_delay)
         current = campus
 
-        end_time = time.time()
-        execution_time = end_time - start_time
+    end_time = time.time()
+    execution_time = end_time - start_time
     return {
         "total_distance_km": round(total_distance, 2),
         "total_duration_min": round(total_duration, 2),
