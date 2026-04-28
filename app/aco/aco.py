@@ -197,7 +197,9 @@ def run_aco(data: dict):
 
     end_time = time.time()
     execution_time = end_time - start_time
+    print("EXEC TIME:", execution_time)
     return {
+        
         "total_distance_km": round(total_distance, 2),
         "total_duration_min": round(total_duration, 2),
         "total_cost": round(total_cost, 2),
