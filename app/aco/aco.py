@@ -202,7 +202,7 @@ def run_aco(data: dict):
         
         "total_distance_km": round(total_distance, 2),
         "total_duration_min": round(total_duration, 2),
-        "total_cost": round(total_cost, 2),
+        # "total_cost": round(total_cost, 2),
         "execution_time_sec": round(execution_time, 4), 
         "segments": segments,
     }
