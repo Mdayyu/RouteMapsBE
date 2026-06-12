@@ -41,6 +41,6 @@ def get_parameter():
         "BETA": 3,
         "EVAPORATION": 0.5,
         "QA": 100,
-        "NUM_ANTS": 100,
+        "NUM_ANTS": 50,
         "NUM_ITERATIONS": 100
     }

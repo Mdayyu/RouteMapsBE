@@ -26,6 +26,7 @@ df = pd.read_excel(file_path)
 df["Latitude"] = df["Latitude"].astype(str).str.replace(",", ".").astype(float)
 df["Longitude"] = df["Longitude"].astype(str).str.replace(",", ".").astype(float)
 
+#Membentuk Dictionary Lokasi
 LOCATIONS = {
     row["Name"]: (row["Latitude"], row["Longitude"])
     for _, row in df.iterrows()
@@ -48,10 +49,10 @@ def run_aco(data: dict):
     BETA = data.get('BETA', 3)
     EVAPORATION = data.get('EVAPORATION', 0.5)
     QA = data.get('QA', 100)
-    NUM_ANTS = data.get('NUM_ANTS', 100)
+    NUM_ANTS = data.get('NUM_ANTS', 50)
     NUM_ITERATIONS = data.get('NUM_ITERATIONS', 100)
-    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.6)
-    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.4)
+    DISTANCE_WEIGHT = data.get('DISTANCE_WEIGHT', 0.5)
+    TRAFFIC_WEIGHT = data.get('TRAFFIC_WEIGHT', 0.5)
     TRAFFIC_LIGHT_DELAY = data.get('TRAFFIC_LIGHT_DELAY', 2)
 
     nodes = [start] + chosen
@@ -89,12 +90,13 @@ def run_aco(data: dict):
     dist_max = np.max(distance_matrix[np.isfinite(distance_matrix)])
     time_min = np.min(time_matrix[np.isfinite(time_matrix)])
     time_max = np.max(time_matrix[np.isfinite(time_matrix)])
+    
 
     distance_norm = (distance_matrix - dist_min) / (dist_max - dist_min + 1e-10)
     time_norm = (time_matrix - time_min) / (time_max - time_min + 1e-10)
 
     # ==============================
-    # COST & VISIBILITY
+    # COST & VISIBILITY 
     # ==============================
     cost_matrix = (
         DISTANCE_WEIGHT * distance_norm +
@@ -198,6 +200,19 @@ def run_aco(data: dict):
     end_time = time.time()
     execution_time = end_time - start_time
     print("EXEC TIME:", execution_time)
+    print(f"- Number of Ants          : {NUM_ANTS}")
+    print("====================================")
+    print("ACO RESULT DEBUG")
+    print("====================================")
+    print("Best Cost:", best_cost)
+    print("Best Route Index:", best_route)
+    print(f"Total Jarak       : {round(total_distance, 2)} km")
+    print(f"Total Waktu       : {round(total_duration, 2)} menit")
+
+    # ubah index jadi nama lokasi biar kebaca
+    ordered_nodes_debug = [nodes[i] for i in best_route]
+    print("Best Route Name:", " -> ".join(ordered_nodes_debug))
+    print("====================================")
     return {
         
         "total_distance_km": round(total_distance, 2),
