@@ -38,7 +38,7 @@ def get_campuses():
 def get_parameter():
     return {
         "ALPHA": 1,
-        "BETA": 3,
+        "BETA": 2,
         "EVAPORATION": 0.5,
         "QA": 100,
         "NUM_ANTS": 50,

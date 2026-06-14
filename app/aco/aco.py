@@ -46,7 +46,7 @@ def run_aco(data: dict):
     # PARAMETER ACO
     # ==============================
     ALPHA = data.get('ALPHA', 1)
-    BETA = data.get('BETA', 3)
+    BETA = data.get('BETA', 2)
     EVAPORATION = data.get('EVAPORATION', 0.5)
     QA = data.get('QA', 100)
     NUM_ANTS = data.get('NUM_ANTS', 50)
